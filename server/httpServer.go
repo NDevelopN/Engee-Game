@@ -47,7 +47,8 @@ func Serve(port string) {
 }
 
 func postGame(c *gin.Context) {
-	reqBody, w := processMessage(c)
+	w := c.Writer
+	reqBody := processMessage(c)
 
 	err := im.CreateNewInstance(string(reqBody))
 	if err != nil {
@@ -64,7 +65,7 @@ func postGame(c *gin.Context) {
 }
 
 func startGame(c *gin.Context) {
-	_, w := processMessage(c)
+	w := c.Writer
 	ids := utils.GetRequestIDs(c.Request)
 
 	err := im.StartInstance(ids[0])
@@ -82,7 +83,7 @@ func startGame(c *gin.Context) {
 }
 
 func pauseGame(c *gin.Context) {
-	_, w := processMessage(c)
+	w := c.Writer
 	ids := utils.GetRequestIDs(c.Request)
 
 	err := im.PauseInstance(ids[0])
@@ -100,7 +101,7 @@ func pauseGame(c *gin.Context) {
 }
 
 func resetGame(c *gin.Context) {
-	_, w := processMessage(c)
+	w := c.Writer
 	ids := utils.GetRequestIDs(c.Request)
 
 	err := im.ResetInstance(ids[0])
@@ -118,7 +119,8 @@ func resetGame(c *gin.Context) {
 }
 
 func updateGameRules(c *gin.Context) {
-	reqBody, w := processMessage(c)
+	w := c.Writer
+	reqBody := processMessage(c)
 	ids := getRequestIDs(c)
 
 	err := im.SetInstanceRules(ids[0], string(reqBody))
@@ -130,7 +132,7 @@ func updateGameRules(c *gin.Context) {
 }
 
 func removePlayer(c *gin.Context) {
-	_, w := processMessage(c)
+	w := c.Writer
 	ids := utils.GetRequestIDs(c.Request)
 
 	err := im.RemovePlayerFromInstance(ids[0], ids[1])
@@ -148,7 +150,7 @@ func removePlayer(c *gin.Context) {
 }
 
 func deleteGame(c *gin.Context) {
-	_, w := processMessage(c)
+	w := c.Writer
 	ids := getRequestIDs(c)
 
 	err := im.DeleteInstance(ids[0])
@@ -165,18 +167,15 @@ func deleteGame(c *gin.Context) {
 	}
 }
 
-func processMessage(c *gin.Context) ([]byte, http.ResponseWriter) {
-	w := c.Writer
-	r := c.Request
-
-	reqBody, err := io.ReadAll(r.Body)
+func processMessage(c *gin.Context) []byte {
+	reqBody, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		http.Error(c.Writer, "Failed to read request body", http.StatusBadRequest)
 		log.Printf("[Error] Reading request body: %v", err)
-		return nil, nil
+		return nil
 	}
 
-	return reqBody, w
+	return reqBody
 }
 
 func sendReply(w http.ResponseWriter, msg string, code int) error {
