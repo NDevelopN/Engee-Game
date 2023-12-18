@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -48,7 +47,11 @@ func Serve(port string) {
 
 func postGame(c *gin.Context) {
 	w := c.Writer
-	reqBody := processMessage(c)
+
+	reqBody := utils.ProcessRequestMessage(c)
+	if reqBody == nil {
+		return
+	}
 
 	err := im.CreateNewInstance(string(reqBody))
 	if err != nil {
@@ -120,8 +123,12 @@ func resetGame(c *gin.Context) {
 
 func updateGameRules(c *gin.Context) {
 	w := c.Writer
-	reqBody := processMessage(c)
 	ids := getRequestIDs(c)
+
+	reqBody := utils.ProcessRequestMessage(c)
+	if reqBody == nil {
+		return
+	}
 
 	err := im.SetInstanceRules(ids[0], string(reqBody))
 	if err != nil {
@@ -165,17 +172,6 @@ func deleteGame(c *gin.Context) {
 		log.Printf("[Error] Replying after deleting game: %v", err)
 		return
 	}
-}
-
-func processMessage(c *gin.Context) []byte {
-	reqBody, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		http.Error(c.Writer, "Failed to read request body", http.StatusBadRequest)
-		log.Printf("[Error] Reading request body: %v", err)
-		return nil
-	}
-
-	return reqBody
 }
 
 func sendReply(w http.ResponseWriter, msg string, code int) error {
