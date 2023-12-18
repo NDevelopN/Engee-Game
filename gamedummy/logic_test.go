@@ -13,7 +13,7 @@ var emptyGame = GameDummy{}
 
 func TestCreateDefaultGame(t *testing.T) {
 	createdGame := CreateDefaultGame()
-	if *createdGame != defaultGame {
+	if !gamesAreEqual(*createdGame, defaultGame) {
 		t.Fatalf(`TestCreateDefaultGame() = %v, want %v`, createdGame, defaultGame)
 	}
 }
@@ -25,7 +25,7 @@ func TestStartGame(t *testing.T) {
 	expected.Status = ACTIVE
 
 	err := testGame.StartGame()
-	if testGame != expected || err != nil {
+	if !gamesAreEqual(testGame, expected) || err != nil {
 		t.Fatalf(`TestStartGame(Valid) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -35,7 +35,7 @@ func TestStartGameEmptyGame(t *testing.T) {
 	expected := emptyGame
 
 	err := testGame.StartGame()
-	if testGame != expected || err == nil {
+	if !gamesAreEqual(testGame, expected) || err == nil {
 		t.Fatalf(`TestStartGame(EmptyGame) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
@@ -48,7 +48,7 @@ func TestStartGameInvalidStatus(t *testing.T) {
 	expected.Status = ACTIVE
 
 	err := testGame.StartGame()
-	if testGame != expected || err == nil {
+	if !gamesAreEqual(testGame, expected) || err == nil {
 		t.Fatalf(`TestStartGame(InvalidStatus) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
@@ -61,7 +61,7 @@ func TestStartGameRESET(t *testing.T) {
 	expected.Status = ACTIVE
 
 	err := testGame.StartGame()
-	if testGame != expected || err != nil {
+	if !gamesAreEqual(testGame, expected) || err != nil {
 		t.Fatalf(`TestStartGame(RESET) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -73,7 +73,7 @@ func TestPauseGame(t *testing.T) {
 	expected.Status = PAUSED
 
 	err := testGame.PauseGame()
-	if testGame != expected || err != nil {
+	if !gamesAreEqual(testGame, expected) || err != nil {
 		t.Fatalf(`TestPauseGame(Valid) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -83,7 +83,7 @@ func TestPauseGameEmptyGame(t *testing.T) {
 	expected := emptyGame
 
 	err := testGame.PauseGame()
-	if testGame != expected || err == nil {
+	if !gamesAreEqual(testGame, expected) || err == nil {
 		t.Fatalf(`TestPauseGame(EmptyGame) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
@@ -93,7 +93,7 @@ func TestPauseGameInvalidStatus(t *testing.T) {
 	expected := defaultGame
 
 	err := testGame.PauseGame()
-	if testGame != expected || err == nil {
+	if !gamesAreEqual(testGame, expected) || err == nil {
 		t.Fatalf(`TestPauseGame(InvalidStatus) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
@@ -106,7 +106,7 @@ func TestPauseGamePAUSED(t *testing.T) {
 	expected.Status = ACTIVE
 
 	err := testGame.PauseGame()
-	if testGame != expected || err != nil {
+	if !gamesAreEqual(testGame, expected) || err != nil {
 		t.Fatalf(`TestPauseGame(PAUSED) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -118,7 +118,7 @@ func TestResetGame(t *testing.T) {
 	expected.Status = RESET
 
 	err := testGame.ResetGame()
-	if testGame != expected || err != nil {
+	if !gamesAreEqual(testGame, expected) || err != nil {
 		t.Fatalf(`TestResetGame(Valid) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -128,7 +128,7 @@ func TestResetGameEmptyGame(t *testing.T) {
 	expected := emptyGame
 
 	err := testGame.ResetGame()
-	if testGame != expected || err == nil {
+	if !gamesAreEqual(testGame, expected) || err == nil {
 		t.Fatalf(`TestResetGame(EmptyGame) = %v, %v, want %v, err`, testGame, err, emptyGame)
 	}
 }
@@ -138,7 +138,7 @@ func TestResetGameInvalidStatus(t *testing.T) {
 	expected := defaultGame
 
 	err := testGame.ResetGame()
-	if testGame != expected || err == nil {
+	if !gamesAreEqual(testGame, expected) || err == nil {
 		t.Fatalf(`TestResetGame(InvalidStatus) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
@@ -151,7 +151,7 @@ func TestResetGamePAUSED(t *testing.T) {
 	expected.Status = RESET
 
 	err := testGame.ResetGame()
-	if testGame != expected || err != nil {
+	if !gamesAreEqual(testGame, expected) || err != nil {
 		t.Fatalf(`TestResetGame(PAUSED) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -189,4 +189,26 @@ func setUpTestGame() GameDummy {
 	testGame.StartGame()
 
 	return testGame
+}
+
+func gamesAreEqual(first GameDummy, second GameDummy) bool {
+	if first.Status != second.Status {
+		return false
+	}
+
+	if first.Rules != second.Rules {
+		return false
+	}
+
+	if len(first.Players) != len(second.Players) {
+		return false
+	}
+
+	for index, plr := range first.Players {
+		if plr != second.Players[index] {
+			return false
+		}
+	}
+
+	return true
 }
