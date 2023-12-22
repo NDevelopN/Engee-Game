@@ -10,116 +10,85 @@ import (
 type SockPool struct {
 	mutex       sync.Mutex
 	connections map[string]*websocket.Conn
+	handler     func(conn *websocket.Conn)
 }
 
-var gameSockets = make(map[string]*SockPool)
-
-func Instantiate(rid string) error {
-	_, found := gameSockets[rid]
-	if found {
-		return fmt.Errorf("connection pool already exists for room %q", rid)
-	}
-
+func Instantiate(handler func(conn *websocket.Conn)) *SockPool {
 	newPool := new(SockPool)
 	newPool.mutex = sync.Mutex{}
 	newPool.connections = map[string]*websocket.Conn{}
+	newPool.handler = handler
 
-	gameSockets[rid] = newPool
-
-	return nil
+	return newPool
 }
 
-func Remove(rid string) error {
-	_, found := gameSockets[rid]
-	if !found {
-		return fmt.Errorf("connection pool for room %q not found", rid)
-	}
+func (pool *SockPool) CloseAll() error {
 
-	gameSockets[rid].mutex.Lock()
-	defer gameSockets[rid].mutex.Unlock()
+	pool.mutex.Lock()
+	defer pool.mutex.Unlock()
 
-	for _, conn := range gameSockets[rid].connections {
+	for _, conn := range pool.connections {
 		err := conn.Close()
 		if err != nil {
 			return err
 		}
 	}
 
-	delete(gameSockets, rid)
-
 	return nil
 }
 
-func AddPlayerToPool(rid string, uid string, conn *websocket.Conn) error {
-	_, found := gameSockets[rid]
-	if !found {
-		return fmt.Errorf("could not find a socket pool for game %q", rid)
-	}
+func (pool *SockPool) AddPlayerToPool(uid string, conn *websocket.Conn) error {
+	pool.mutex.Lock()
+	defer pool.mutex.Unlock()
 
-	gameSockets[rid].mutex.Lock()
-	defer gameSockets[rid].mutex.Unlock()
-
-	_, found = gameSockets[rid].connections[uid]
+	_, found := pool.connections[uid]
 	if found {
-		return fmt.Errorf("connection already established for player %q in game %q", uid, rid)
+		return fmt.Errorf("connection already established for player %q", uid)
 	}
 
-	gameSockets[rid].connections[uid] = conn
+	pool.connections[uid] = conn
+
+	go pool.handler(conn)
 
 	return nil
 }
 
-func RemovePlayerFromPool(rid string, uid string) error {
-	_, found := gameSockets[rid]
-	if !found {
-		return fmt.Errorf("could not find a socket pool for game %q", rid)
-	}
+func (pool *SockPool) RemovePlayerFromPool(uid string) error {
+	pool.mutex.Lock()
+	defer pool.mutex.Unlock()
 
-	gameSockets[rid].mutex.Lock()
-	defer gameSockets[rid].mutex.Unlock()
-
-	_, found = gameSockets[rid].connections[uid]
+	_, found := pool.connections[uid]
 	if found {
-		return fmt.Errorf("could not find connection for user %q in game %q", uid, rid)
+		return fmt.Errorf("could not find connection for user %q", uid)
 	}
 
-	delete(gameSockets[rid].connections, uid)
+	delete(pool.connections, uid)
 
 	return nil
 }
 
-func SendAll(message []byte, rid string) error {
-	_, found := gameSockets[rid]
-	if !found {
-		return fmt.Errorf("could not find a socket pool for game %q", rid)
+func (pool *SockPool) SendAll(message []byte) error {
+	if len(pool.connections) == 0 {
+		return fmt.Errorf("no connections in socket pool")
 	}
 
-	if len(gameSockets[rid].connections) == 0 {
-		return fmt.Errorf("no connections in socket pool of game %q", rid)
-	}
+	pool.mutex.Lock()
+	defer pool.mutex.Unlock()
 
-	gameSockets[rid].mutex.Lock()
-	defer gameSockets[rid].mutex.Unlock()
-
-	for _, conn := range gameSockets[rid].connections {
+	for _, conn := range pool.connections {
 		conn.WriteMessage(websocket.TextMessage, message)
 	}
 
 	return nil
 }
 
-func SendTo(message []byte, rid string, uid string) error {
-	_, found := gameSockets[rid]
-	if !found {
-		return fmt.Errorf("coudl not find socket pool for game")
-	}
+func (pool *SockPool) SendTo(message []byte, uid string) error {
+	pool.mutex.Lock()
+	defer pool.mutex.Unlock()
 
-	gameSockets[rid].mutex.Lock()
-	defer gameSockets[rid].mutex.Unlock()
-
-	conn, found := gameSockets[rid].connections[uid]
+	conn, found := pool.connections[uid]
 	if found {
-		return fmt.Errorf("could not find connection for user %q in game %q", uid, rid)
+		return fmt.Errorf("could not find connection for user %q", uid)
 	}
 
 	conn.WriteMessage(websocket.TextMessage, message)

@@ -1,16 +1,52 @@
 package instanceManagement
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 
 	game "Engee-Game/gamedummy"
-	"Engee-Game/websocket"
+
+	"github.com/gorilla/websocket"
 )
 
 var instances map[string]GameInstance
 
-func PrepareInstancing() {
+type gInfo struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+func PrepareInstancing(port string) {
 	instances = make(map[string]GameInstance)
+
+	info := gInfo{
+		Name: "test",
+		URL:  "localhost:" + port,
+	}
+
+	body, err := json.Marshal(info)
+	if err != nil {
+		log.Fatalf("Could not register game mode (body): %v", err)
+	}
+
+	reqBody := bytes.NewReader(body)
+
+	request, err := http.NewRequest("POST", "http://localhost:8090/gameModes", reqBody)
+	if err != nil {
+		log.Fatalf("Could not register game mode (request): %v", err)
+	}
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		log.Fatalf("Could not register game mode (sent): %v", err)
+	}
+
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		log.Fatalf("Could not register game mode (code): %v", err)
+	}
 }
 
 func CreateNewInstance(rid string) error {
@@ -24,11 +60,6 @@ func CreateNewInstance(rid string) error {
 	}
 
 	instance := game.CreateDefaultGame()
-
-	err := websocket.Instantiate(rid)
-	if err != nil {
-		return err
-	}
 
 	instances[rid] = instance
 
@@ -46,10 +77,6 @@ func DeleteInstance(rid string) error {
 		return err
 	}
 
-	err = websocket.Remove(rid)
-	if err != nil {
-		return fmt.Errorf("could not close connection pool: %v", err)
-	}
 	delete(instances, rid)
 
 	return nil
@@ -117,6 +144,22 @@ func ResetInstance(rid string) error {
 	return nil
 }
 
+func AddPlayerToInstance(rid string, uid string, conn *websocket.Conn) error {
+	instance, err := getInstance(rid)
+	if err != nil {
+		return err
+	}
+
+	err = instance.JoinPlayer(uid, conn)
+	if err != nil {
+		return err
+	}
+
+	instances[rid] = instance
+	return nil
+
+}
+
 func RemovePlayerFromInstance(rid string, uid string) error {
 	instance, err := getInstance(rid)
 	if err != nil {
@@ -127,8 +170,6 @@ func RemovePlayerFromInstance(rid string, uid string) error {
 	if err != nil {
 		return err
 	}
-
-	websocket.RemovePlayerFromPool(rid, uid)
 
 	instances[rid] = instance
 	return nil

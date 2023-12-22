@@ -42,6 +42,8 @@ func Serve(port string) {
 	router.DELETE("/games/:id/players/:id", removePlayer)
 	router.DELETE("/games/:id", deleteGame)
 
+	router.GET("/games/:id/players/:id", JoinPlayer)
+
 	router.Run(":" + port)
 }
 

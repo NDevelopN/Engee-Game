@@ -8,6 +8,6 @@ import (
 const port = "8091"
 
 func main() {
-	instanceManagement.PrepareInstancing()
+	instanceManagement.PrepareInstancing(port)
 	server.Serve(port)
 }
