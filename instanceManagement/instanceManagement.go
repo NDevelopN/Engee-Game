@@ -9,8 +9,6 @@ import (
 
 	game "Engee-Game/gamedummy"
 	"Engee-Game/utils"
-
-	"github.com/gorilla/websocket"
 )
 
 var instances map[string]GameInstance
@@ -145,7 +143,7 @@ func ResetInstance(rid string) error {
 	return nil
 }
 
-func AddPlayerToInstance(rid string, uid string, conn *websocket.Conn) error {
+func AddPlayerToInstance(rid string, uid string) error {
 	instance, err := getInstance(rid)
 	if err != nil {
 		return err
@@ -158,7 +156,21 @@ func AddPlayerToInstance(rid string, uid string, conn *websocket.Conn) error {
 
 	instances[rid] = instance
 	return nil
+}
 
+func AddListenerToInstance(rid string, listener func(message []byte) error) error {
+	instance, err := getInstance(rid)
+	if err != nil {
+		return err
+	}
+
+	err = instance.AddListener(listener)
+	if err != nil {
+		return err
+	}
+
+	instances[rid] = instance
+	return nil
 }
 
 func RemovePlayerFromInstance(rid string, uid string) error {

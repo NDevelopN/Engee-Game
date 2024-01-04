@@ -1,7 +1,6 @@
 package gamedummy
 
 import (
-	pSock "Engee-Game/playerSockets"
 	"fmt"
 )
 
@@ -29,15 +28,6 @@ func CreateDefaultGame(rid string) (*GameDummy, error) {
 	nGame.Rules = dummyRules
 	nGame.Status = NEW
 	nGame.Players = []string{}
-
-	err := pSock.Instantiate(rid,
-		func(messageType int, data []byte, err error) {
-			Handle(messageType, data, err, nGame)
-		})
-
-	if err != nil {
-		return nil, err
-	}
 
 	return nGame, nil
 }
@@ -126,7 +116,6 @@ func (dummy *GameDummy) RemovePlayer(uid string) error {
 		if plr == uid {
 			players[index] = players[end]
 			dummy.Players = players[:end]
-			pSock.RemovePlayerFromPool(dummy.RID, uid)
 			return dummy.SendPlayerUpdate()
 		}
 	}
@@ -140,7 +129,7 @@ func (dummy *GameDummy) EndGame() error {
 		return err
 	}
 
-	return pSock.CloseAll(dummy.RID)
+	return nil
 }
 
 func (dummy *GameDummy) Connect(message string) error {

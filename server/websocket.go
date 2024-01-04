@@ -36,7 +36,7 @@ func JoinPlayer(c *gin.Context) {
 		return
 	}
 
-	err = instanceManagement.AddPlayerToInstance(ids[0], ids[1], conn)
+	err = instanceManagement.AddPlayerToInstance(ids[0], ids[1])
 	if err != nil {
 		http.Error(w, "Failed to add player to game", http.StatusInternalServerError)
 		log.Printf("[Error] Adding player to game: %v", err)
