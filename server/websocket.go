@@ -2,8 +2,8 @@ package server
 
 import (
 	"Engee-Game/instanceManagement"
+	pSock "Engee-Game/playerSockets"
 	"Engee-Game/utils"
-	pSock "Engee-Game/websocket"
 
 	"fmt"
 	"log"

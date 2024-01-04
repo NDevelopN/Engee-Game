@@ -1,7 +1,7 @@
 package gamedummy
 
 import (
-	pSock "Engee-Game/websocket"
+	pSock "Engee-Game/playerSockets"
 	"fmt"
 )
 
