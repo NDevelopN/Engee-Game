@@ -6,8 +6,9 @@ import (
 )
 
 const port = "8091"
+const address = "localhost:" + port
 
 func main() {
-	instanceManagement.PrepareInstancing(port)
+	instanceManagement.PrepareInstancing(address)
 	server.Serve(port)
 }

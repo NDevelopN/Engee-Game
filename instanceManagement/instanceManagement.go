@@ -15,12 +15,14 @@ import (
 
 var instances map[string]GameInstance
 
-func PrepareInstancing(port string) {
+const serverAddr = "http://localhost:8090"
+
+func PrepareInstancing(gameAddr string) {
 	instances = make(map[string]GameInstance)
 
 	info := utils.StringPair{
 		First:  "test",
-		Second: "localhost:" + port,
+		Second: gameAddr,
 	}
 
 	body, err := json.Marshal(info)
@@ -30,7 +32,7 @@ func PrepareInstancing(port string) {
 
 	reqBody := bytes.NewReader(body)
 
-	request, err := http.NewRequest("POST", "http://localhost:8090/gameModes", reqBody)
+	request, err := http.NewRequest("POST", serverAddr+"/gameModes", reqBody)
 	if err != nil {
 		log.Fatalf("Could not register game mode (request): %v", err)
 	}
