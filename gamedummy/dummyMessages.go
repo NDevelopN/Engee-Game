@@ -1,6 +1,8 @@
 package gamedummy
 
 import (
+	pSock "Engee-Game/websocket"
+
 	"encoding/json"
 	"fmt"
 )
@@ -26,7 +28,7 @@ func (game *GameDummy) SendRulesUpdate() error {
 		return err
 	}
 
-	return game.Pool.SendAll(message)
+	return pSock.SendAll(game.RID, message)
 }
 
 func (game *GameDummy) SendStatusUpdate() error {
@@ -40,7 +42,7 @@ func (game *GameDummy) SendStatusUpdate() error {
 		return err
 	}
 
-	return game.Pool.SendAll(message)
+	return pSock.SendAll(game.RID, message)
 }
 
 func (game *GameDummy) SendPlayerUpdate() error {
@@ -59,7 +61,7 @@ func (game *GameDummy) SendPlayerUpdate() error {
 		return err
 	}
 
-	return game.Pool.SendAll(message)
+	return pSock.SendAll(game.RID, message)
 }
 
 func (game *GameDummy) SendXUpdate(x string, update string) error {
@@ -73,5 +75,5 @@ func (game *GameDummy) SendXUpdate(x string, update string) error {
 		return err
 	}
 
-	return game.Pool.SendAll(message)
+	return pSock.SendAll(game.RID, message)
 }

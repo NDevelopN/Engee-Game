@@ -4,19 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-
-	"github.com/gorilla/websocket"
 )
 
-func Handle(conn *websocket.Conn, game *GameDummy) {
+func Handle(messageType int, data []byte, err error, game *GameDummy) {
 	for {
-		messageType, data, err := conn.ReadMessage()
 		if err != nil {
 			log.Printf("[CLOSE] Connection closed: %v", err)
 			return
 		}
 
-		if messageType != websocket.TextMessage {
+		if messageType != 1 { //websocket.TextMessage
 			log.Printf("[Error] Received unexpected message type: %v", messageType)
 			continue
 		}

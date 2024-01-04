@@ -3,8 +3,6 @@ package gamedummy
 import (
 	pSock "Engee-Game/websocket"
 	"fmt"
-
-	"github.com/gorilla/websocket"
 )
 
 const dummyRules = "Rules"
@@ -18,25 +16,29 @@ const (
 )
 
 type GameDummy struct {
+	RID     string
 	Rules   string
 	Status  int
 	Players []string
-
-	Pool *pSock.SockPool
 }
 
-func CreateDefaultGame() *GameDummy {
+func CreateDefaultGame(rid string) (*GameDummy, error) {
 	nGame := new(GameDummy)
+	nGame.RID = rid
 	nGame.Rules = dummyRules
 	nGame.Status = NEW
 	nGame.Players = []string{}
 
-	nGame.Pool = pSock.Instantiate(
-		func(conn *websocket.Conn) {
-			Handle(conn, nGame)
+	err := pSock.Instantiate(rid,
+		func(messageType int, data []byte, err error) {
+			Handle(messageType, data, err, nGame)
 		})
 
-	return nGame
+	if err != nil {
+		return nil, err
+	}
+
+	return nGame, nil
 }
 
 func (dummy *GameDummy) SetRules(rules string) error {
@@ -87,7 +89,7 @@ func (dummy *GameDummy) ResetGame() error {
 	return dummy.SendStatusUpdate()
 }
 
-func (dummy *GameDummy) JoinPlayer(uid string, conn *websocket.Conn) error {
+func (dummy *GameDummy) JoinPlayer(uid string) error {
 	err := checkValidGame(dummy, []int{})
 	if err != nil {
 		return err
@@ -97,11 +99,6 @@ func (dummy *GameDummy) JoinPlayer(uid string, conn *websocket.Conn) error {
 		if plr == uid {
 			return fmt.Errorf("player already in the game")
 		}
-	}
-
-	err = dummy.Pool.AddPlayerToPool(uid, conn)
-	if err != nil {
-		return err
 	}
 
 	return dummy.SendPlayerUpdate()
@@ -120,7 +117,7 @@ func (dummy *GameDummy) RemovePlayer(uid string) error {
 		if plr == uid {
 			players[index] = players[end]
 			dummy.Players = players[:end]
-			dummy.Pool.RemovePlayerFromPool(uid)
+			pSock.RemovePlayerFromPool(dummy.RID, uid)
 			return dummy.SendPlayerUpdate()
 		}
 	}
@@ -134,7 +131,7 @@ func (dummy *GameDummy) EndGame() error {
 		return err
 	}
 
-	return dummy.Pool.CloseAll()
+	return pSock.CloseAll(dummy.RID)
 }
 
 func (dummy *GameDummy) Connect(message string) error {
@@ -162,7 +159,7 @@ func (dummy *GameDummy) Control(message string) error {
 		return dummy.EndGame()
 	}
 
-	return fmt.Errorf("Unrecognised command: %q", message)
+	return fmt.Errorf("unrecognised command: %q", message)
 
 }
 

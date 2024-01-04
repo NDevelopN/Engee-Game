@@ -57,7 +57,10 @@ func CreateNewInstance(rid string) error {
 		return fmt.Errorf("game already exists for room %s", rid)
 	}
 
-	instance := game.CreateDefaultGame()
+	instance, err := game.CreateDefaultGame(rid)
+	if err != nil {
+		return err
+	}
 
 	instances[rid] = instance
 
@@ -148,7 +151,7 @@ func AddPlayerToInstance(rid string, uid string, conn *websocket.Conn) error {
 		return err
 	}
 
-	err = instance.JoinPlayer(uid, conn)
+	err = instance.JoinPlayer(uid)
 	if err != nil {
 		return err
 	}

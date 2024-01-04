@@ -3,6 +3,8 @@ package server
 import (
 	"Engee-Game/instanceManagement"
 	"Engee-Game/utils"
+	pSock "Engee-Game/websocket"
+
 	"fmt"
 	"log"
 	"net/http"
@@ -26,10 +28,18 @@ func JoinPlayer(c *gin.Context) {
 
 	conn.SetCloseHandler(handleClose)
 
-	err = instanceManagement.AddPlayerToInstance(ids[0], ids[1], conn)
+	err = pSock.AddPlayerToPool(ids[0], ids[1], conn)
 	if err != nil {
 		http.Error(w, "Failed to add player to pool", http.StatusInternalServerError)
 		log.Printf("[Error] Adding player to connection pool: %v", err)
+		conn.Close()
+		return
+	}
+
+	err = instanceManagement.AddPlayerToInstance(ids[0], ids[1], conn)
+	if err != nil {
+		http.Error(w, "Failed to add player to game", http.StatusInternalServerError)
+		log.Printf("[Error] Adding player to game: %v", err)
 		conn.Close()
 		return
 	}

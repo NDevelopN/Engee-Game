@@ -1,31 +1,45 @@
 package gamedummy
 
 import (
+	"Engee-Game/server"
+	pSock "Engee-Game/websocket"
+	"log"
+	"os"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
-var defaultGame = GameDummy{
-	Rules:  dummyRules,
-	Status: NEW,
-}
+var testRID = uuid.NewString()
+var testUID = uuid.NewString()
 
 var emptyGame = GameDummy{}
 
+func TestMain(m *testing.M) {
+	setupSuite()
+	code := m.Run()
+	cleanupSuite()
+	os.Exit(code)
+}
+
 func TestCreateDefaultGame(t *testing.T) {
-	createdGame := CreateDefaultGame()
-	if !gamesAreEqual(*createdGame, defaultGame) {
-		t.Fatalf(`TestCreateDefaultGame() = %v, want %v`, createdGame, defaultGame)
+	game, err := CreateDefaultGame(testRID)
+	if err != nil {
+		t.Fatalf("TestCreateDefaultGame: %v", err)
 	}
+
+	t.Cleanup(func() { cleanUpTestGame(game) })
 }
 
 func TestStartGame(t *testing.T) {
-	testGame := defaultGame
+	testGame := setupDefaultGame(t)
 
-	expected := defaultGame
+	expected := *testGame
 	expected.Status = ACTIVE
 
 	err := testGame.StartGame()
-	if !gamesAreEqual(testGame, expected) || err != nil {
+	if !gamesAreEqual(*testGame, expected) || err != nil {
 		t.Fatalf(`TestStartGame(Valid) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -41,39 +55,39 @@ func TestStartGameEmptyGame(t *testing.T) {
 }
 
 func TestStartGameInvalidStatus(t *testing.T) {
-	testGame := defaultGame
-	expected := defaultGame
+	testGame := setupDefaultGame(t)
+	expected := *testGame
 
 	testGame.Status = ACTIVE
 	expected.Status = ACTIVE
 
 	err := testGame.StartGame()
-	if !gamesAreEqual(testGame, expected) || err == nil {
+	if !gamesAreEqual(*testGame, expected) || err == nil {
 		t.Fatalf(`TestStartGame(InvalidStatus) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
 
 func TestStartGameRESET(t *testing.T) {
-	testGame := defaultGame
-	expected := defaultGame
+	testGame := setupDefaultGame(t)
+	expected := *testGame
 
 	testGame.Status = RESET
 	expected.Status = ACTIVE
 
 	err := testGame.StartGame()
-	if !gamesAreEqual(testGame, expected) || err != nil {
+	if !gamesAreEqual(*testGame, expected) || err != nil {
 		t.Fatalf(`TestStartGame(RESET) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
 
 func TestPauseGame(t *testing.T) {
-	testGame := setUpTestGame()
+	testGame := setUpTestGame(t)
 
-	expected := testGame
+	expected := *testGame
 	expected.Status = PAUSED
 
 	err := testGame.PauseGame()
-	if !gamesAreEqual(testGame, expected) || err != nil {
+	if !gamesAreEqual(*testGame, expected) || err != nil {
 		t.Fatalf(`TestPauseGame(Valid) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -89,36 +103,36 @@ func TestPauseGameEmptyGame(t *testing.T) {
 }
 
 func TestPauseGameInvalidStatus(t *testing.T) {
-	testGame := defaultGame
-	expected := defaultGame
+	testGame := setupDefaultGame(t)
+	expected := *testGame
 
 	err := testGame.PauseGame()
-	if !gamesAreEqual(testGame, expected) || err == nil {
+	if !gamesAreEqual(*testGame, expected) || err == nil {
 		t.Fatalf(`TestPauseGame(InvalidStatus) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
 
 func TestPauseGamePAUSED(t *testing.T) {
-	testGame := setUpTestGame()
-	expected := testGame
+	testGame := setUpTestGame(t)
+	expected := *testGame
 
 	testGame.Status = PAUSED
 	expected.Status = ACTIVE
 
 	err := testGame.PauseGame()
-	if !gamesAreEqual(testGame, expected) || err != nil {
+	if !gamesAreEqual(*testGame, expected) || err != nil {
 		t.Fatalf(`TestPauseGame(PAUSED) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
 
 func TestResetGame(t *testing.T) {
-	testGame := setUpTestGame()
+	testGame := setUpTestGame(t)
 
-	expected := testGame
+	expected := *testGame
 	expected.Status = RESET
 
 	err := testGame.ResetGame()
-	if !gamesAreEqual(testGame, expected) || err != nil {
+	if !gamesAreEqual(*testGame, expected) || err != nil {
 		t.Fatalf(`TestResetGame(Valid) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
@@ -134,30 +148,30 @@ func TestResetGameEmptyGame(t *testing.T) {
 }
 
 func TestResetGameInvalidStatus(t *testing.T) {
-	testGame := defaultGame
-	expected := defaultGame
+	testGame := setupDefaultGame(t)
+	expected := *testGame
 
 	err := testGame.ResetGame()
-	if !gamesAreEqual(testGame, expected) || err == nil {
+	if !gamesAreEqual(*testGame, expected) || err == nil {
 		t.Fatalf(`TestResetGame(InvalidStatus) = %v, %v, want %v, err`, testGame, err, expected)
 	}
 }
 
 func TestResetGamePAUSED(t *testing.T) {
-	testGame := setUpTestGame()
-	expected := testGame
+	testGame := setUpTestGame(t)
+	expected := *testGame
 
 	testGame.Status = PAUSED
 	expected.Status = RESET
 
 	err := testGame.ResetGame()
-	if !gamesAreEqual(testGame, expected) || err != nil {
+	if !gamesAreEqual(*testGame, expected) || err != nil {
 		t.Fatalf(`TestResetGame(PAUSED) = %v, %v, want %v, nil`, testGame, err, expected)
 	}
 }
 
 func TestEndGame(t *testing.T) {
-	testGame := setUpTestGame()
+	testGame := setUpTestGame(t)
 
 	err := testGame.EndGame()
 	if err != nil {
@@ -175,7 +189,7 @@ func TestEndGameEmptyGame(t *testing.T) {
 }
 
 func TestEndGamePAUSED(t *testing.T) {
-	testGame := setUpTestGame()
+	testGame := setUpTestGame(t)
 	testGame.Status = PAUSED
 
 	err := testGame.EndGame()
@@ -184,11 +198,51 @@ func TestEndGamePAUSED(t *testing.T) {
 	}
 }
 
-func setUpTestGame() GameDummy {
-	testGame := defaultGame
+func setupSuite() {
+	server.Serve("localhost:8091")
+}
+
+func cleanupSuite() {
+}
+
+func dummyConnect() {
+	addr := "ws://localhost:8091/games/:" + testRID + "/players/:" + testUID
+	ws, _, err := websocket.DefaultDialer.Dial(addr, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("Connected to %s\n", addr)
+
+	defer ws.Close()
+}
+
+func setupDefaultGame(t *testing.T) *GameDummy {
+
+	log.Printf("Setting up default game\n")
+	game, err := CreateDefaultGame(testRID)
+	if err != nil {
+		panic(err)
+	}
+
+	go dummyConnect()
+
+	t.Cleanup(func() { cleanUpTestGame(game) })
+
+	return game
+}
+
+func setUpTestGame(t *testing.T) *GameDummy {
+
+	testGame := setupDefaultGame(t)
 	testGame.StartGame()
 
 	return testGame
+}
+
+func cleanUpTestGame(game *GameDummy) {
+	pSock.Delete(game.RID)
+	game.EndGame()
 }
 
 func gamesAreEqual(first GameDummy, second GameDummy) bool {
