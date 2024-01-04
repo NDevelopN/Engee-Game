@@ -8,23 +8,19 @@ import (
 	"net/http"
 
 	game "Engee-Game/gamedummy"
+	"Engee-Game/utils"
 
 	"github.com/gorilla/websocket"
 )
 
 var instances map[string]GameInstance
 
-type gInfo struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
-}
-
 func PrepareInstancing(port string) {
 	instances = make(map[string]GameInstance)
 
-	info := gInfo{
-		Name: "test",
-		URL:  "localhost:" + port,
+	info := utils.StringPair{
+		First:  "test",
+		Second: "localhost:" + port,
 	}
 
 	body, err := json.Marshal(info)
