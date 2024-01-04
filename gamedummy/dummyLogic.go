@@ -16,10 +16,11 @@ const (
 )
 
 type GameDummy struct {
-	RID     string
-	Rules   string
-	Status  int
-	Players []string
+	RID       string
+	Rules     string
+	Status    int
+	Players   []string
+	Listeners []func([]byte) error
 }
 
 func CreateDefaultGame(rid string) (*GameDummy, error) {
@@ -101,7 +102,15 @@ func (dummy *GameDummy) JoinPlayer(uid string) error {
 		}
 	}
 
+	dummy.Players = append(dummy.Players, uid)
+
 	return dummy.SendPlayerUpdate()
+}
+
+func (dummy *GameDummy) AddListener(listener func([]byte) error) error {
+	dummy.Listeners = append(dummy.Listeners, listener)
+
+	return nil
 }
 
 func (dummy *GameDummy) RemovePlayer(uid string) error {
