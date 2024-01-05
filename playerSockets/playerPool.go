@@ -13,6 +13,7 @@ import (
 type SockPool struct {
 	mutex       sync.Mutex
 	connections map[string]*websocket.Conn
+	listeners   map[string]string
 }
 
 var gamePools map[string]*SockPool = make(map[string]*SockPool)
@@ -76,10 +77,15 @@ func AddPlayerToPool(rid string, uid string, conn *websocket.Conn) error {
 		return fmt.Errorf("connection already established for player %q", uid)
 	}
 
-	im.AddListenerToInstance(rid, (func(message []byte) error {
+	lid, err := im.AddListenerToInstance(rid, (func(message []byte) error {
 		return SendTo(rid, message, uid)
 	}))
 
+	if err != nil {
+		return err
+	}
+
+	pool.listeners[uid] = lid
 	pool.connections[uid] = conn
 	gamePools[rid] = pool
 
@@ -116,6 +122,11 @@ func RemovePlayerFromPool(rid string, uid string) error {
 	_, found = pool.connections[uid]
 	if found {
 		return fmt.Errorf("could not find connection for user %q", uid)
+	}
+
+	err := im.RemoveListenerFromInstance(rid, pool.listeners[uid])
+	if err != nil {
+		return err
 	}
 
 	delete(pool.connections, uid)

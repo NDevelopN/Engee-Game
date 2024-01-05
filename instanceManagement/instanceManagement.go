@@ -158,13 +158,28 @@ func AddPlayerToInstance(rid string, uid string) error {
 	return nil
 }
 
-func AddListenerToInstance(rid string, listener func(message []byte) error) error {
+func AddListenerToInstance(rid string, listener func(message []byte) error) (string, error) {
+	instance, err := getInstance(rid)
+	if err != nil {
+		return "", err
+	}
+
+	lid, err := instance.AddListener(listener)
+	if err != nil {
+		return "", err
+	}
+
+	instances[rid] = instance
+	return lid, nil
+}
+
+func RemoveListenerFromInstance(rid string, lid string) error {
 	instance, err := getInstance(rid)
 	if err != nil {
 		return err
 	}
 
-	err = instance.AddListener(listener)
+	err = instance.RemoveListener(lid)
 	if err != nil {
 		return err
 	}

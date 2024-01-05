@@ -77,14 +77,15 @@ func (game *GameDummy) SendXUpdate(x string, update string) error {
 	return sendMessage(game.Listeners, message)
 }
 
-func sendMessage(listeners []func([]byte) error, message []byte) error {
+func sendMessage(listeners map[string]func([]byte) error, message []byte) error {
 	var err error
-	fail := false
 
 	if len(listeners) == 0 {
 		log.Printf("[Alert] No listeners registered for game")
 		return nil
 	}
+
+	fail := false
 
 	for _, listener := range listeners {
 		err = listener(message)
