@@ -1,14 +1,10 @@
 package gamedummy
 
 import (
-	"Engee-Game/server"
-	pSock "Engee-Game/websocket"
-	"log"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 )
 
 var testRID = uuid.NewString()
@@ -199,33 +195,25 @@ func TestEndGamePAUSED(t *testing.T) {
 }
 
 func setupSuite() {
-	server.Serve("localhost:8091")
+
 }
 
 func cleanupSuite() {
+
 }
 
-func dummyConnect() {
-	addr := "ws://localhost:8091/games/:" + testRID + "/players/:" + testUID
-	ws, _, err := websocket.DefaultDialer.Dial(addr, nil)
-	if err != nil {
-		panic(err)
-	}
+func updateListener(message []byte) error {
 
-	log.Printf("Connected to %s\n", addr)
-
-	defer ws.Close()
+	return nil
 }
 
 func setupDefaultGame(t *testing.T) *GameDummy {
-
-	log.Printf("Setting up default game\n")
 	game, err := CreateDefaultGame(testRID)
 	if err != nil {
 		panic(err)
 	}
 
-	go dummyConnect()
+	game.AddListener(updateListener)
 
 	t.Cleanup(func() { cleanUpTestGame(game) })
 
@@ -241,7 +229,6 @@ func setUpTestGame(t *testing.T) *GameDummy {
 }
 
 func cleanUpTestGame(game *GameDummy) {
-	pSock.Delete(game.RID)
 	game.EndGame()
 }
 
