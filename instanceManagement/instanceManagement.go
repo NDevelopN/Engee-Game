@@ -188,6 +188,16 @@ func RemovePlayerFromInstance(rid string, uid string) error {
 	return nil
 }
 
+func MessageHandleInstance(rid string, message []byte) {
+	instance, err := getInstance(rid)
+	if err != nil {
+		log.Printf("[Error] could not get instnace to handle message: %v", err)
+		return
+	}
+
+	instance.HandleMessage(message)
+}
+
 func getInstance(rid string) (GameInstance, error) {
 	instance, found := instances[rid]
 	if !found {

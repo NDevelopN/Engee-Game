@@ -9,4 +9,5 @@ type GameInstance interface {
 	JoinPlayer(uid string) error
 	RemovePlayer(uid string) error
 	AddListener(func([]byte) error) error
+	HandleMessage([]byte)
 }

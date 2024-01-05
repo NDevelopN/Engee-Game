@@ -6,35 +6,22 @@ import (
 	"log"
 )
 
-func Handle(messageType int, data []byte, err error, game *GameDummy) {
-	for {
-		if err != nil {
-			log.Printf("[CLOSE] Connection closed: %v", err)
-			return
-		}
+func (game *GameDummy) HandleMessage(message []byte) {
+	var msg DummyMessage
+	err := json.Unmarshal(message, &msg)
+	if err != nil {
+		log.Printf("[Error] could not unmarshal message: %v", err)
+		return
+	}
 
-		if messageType != 1 { //websocket.TextMessage
-			log.Printf("[Error] Received unexpected message type: %v", messageType)
-			continue
-		}
-
-		var msg = DummyMessage{}
-		err = json.Unmarshal(data, &msg)
-		if err != nil {
-			log.Printf("[Error] Cannot unmarshal received message: %v", err)
-			continue
-		}
-
-		err = RouteMessage(msg, game)
-		if err != nil {
-			log.Printf("[Error] Handling message: %v", err)
-			continue
-		}
+	err = routeMessage(msg, game)
+	if err != nil {
+		log.Printf("[Error] could not route message: %v", err)
+		return
 	}
 }
 
-func RouteMessage(msg DummyMessage, game *GameDummy) error {
-	log.Printf("Routing message: %v", msg)
+func routeMessage(msg DummyMessage, game *GameDummy) error {
 	switch msg.Type {
 	case "Connect":
 		return game.Connect(msg.Content)

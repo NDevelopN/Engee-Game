@@ -13,12 +13,11 @@ import (
 type SockPool struct {
 	mutex       sync.Mutex
 	connections map[string]*websocket.Conn
-	handler     func(int, []byte, error)
 }
 
 var gamePools map[string]*SockPool = make(map[string]*SockPool)
 
-func Instantiate(rid string, handler func(int, []byte, error)) error {
+func Instantiate(rid string) error {
 	_, found := gamePools[rid]
 	if found {
 		return fmt.Errorf("socket Pool for that game already exists")
@@ -27,7 +26,6 @@ func Instantiate(rid string, handler func(int, []byte, error)) error {
 	newPool := new(SockPool)
 	newPool.mutex = sync.Mutex{}
 	newPool.connections = map[string]*websocket.Conn{}
-	newPool.handler = handler
 
 	gamePools[rid] = newPool
 
@@ -85,13 +83,26 @@ func AddPlayerToPool(rid string, uid string, conn *websocket.Conn) error {
 	pool.connections[uid] = conn
 	gamePools[rid] = pool
 
-	go func() {
-		for {
-			pool.handler(pool.connections[uid].ReadMessage())
-		}
-	}()
+	go AcceptInput(rid, uid, conn)
 
 	return nil
+}
+
+func AcceptInput(rid string, uid string, conn *websocket.Conn) {
+	for {
+		mType, data, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("[Error] reading input from player %s: %v", uid, err)
+			continue
+		}
+
+		if mType != websocket.TextMessage {
+			log.Printf("[Error] message type not supported: %v", mType)
+			continue
+		}
+
+		im.MessageHandleInstance(rid, data)
+	}
 }
 
 func RemovePlayerFromPool(rid string, uid string) error {
