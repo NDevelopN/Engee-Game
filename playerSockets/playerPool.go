@@ -66,7 +66,11 @@ func AddPlayerToPool(rid string, uid string, conn *websocket.Conn) error {
 	log.Printf("Adding player %s to pool %s", uid, rid)
 	pool, found := gamePools[rid]
 	if !found {
-		return fmt.Errorf("no socket pool exists for that game")
+		err := Instantiate(rid)
+		if err != nil {
+			return err
+		}
+		pool = gamePools[rid]
 	}
 
 	pool.mutex.Lock()
