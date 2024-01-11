@@ -27,7 +27,12 @@ func (game *GameDummy) SendRulesUpdate() error {
 		return err
 	}
 
-	return sendMessage(game.Listeners, message)
+	err = sendMessage(game.Listeners, message)
+	if err != nil {
+		log.Printf("[Error] Failed to send Rules update: %v", err)
+	}
+
+	return nil
 }
 
 func (game *GameDummy) SendStatusUpdate() error {
@@ -40,8 +45,12 @@ func (game *GameDummy) SendStatusUpdate() error {
 	if err != nil {
 		return err
 	}
+	err = sendMessage(game.Listeners, message)
+	if err != nil {
+		log.Printf("[Error] Failed to send Rules update: %v", err)
+	}
 
-	return sendMessage(game.Listeners, message)
+	return nil
 }
 
 func (game *GameDummy) SendPlayerUpdate() error {
@@ -59,8 +68,12 @@ func (game *GameDummy) SendPlayerUpdate() error {
 	if err != nil {
 		return err
 	}
+	err = sendMessage(game.Listeners, message)
+	if err != nil {
+		log.Printf("[Error] Failed to send Rules update: %v", err)
+	}
 
-	return sendMessage(game.Listeners, message)
+	return nil
 }
 
 func (game *GameDummy) SendXUpdate(x string, update string) error {
@@ -73,8 +86,12 @@ func (game *GameDummy) SendXUpdate(x string, update string) error {
 	if err != nil {
 		return err
 	}
+	err = sendMessage(game.Listeners, message)
+	if err != nil {
+		log.Printf("[Error] Failed to send generic update: %v", err)
+	}
 
-	return sendMessage(game.Listeners, message)
+	return nil
 }
 
 func sendMessage(listeners map[string]func([]byte) error, message []byte) error {
