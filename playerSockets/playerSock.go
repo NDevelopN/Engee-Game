@@ -34,7 +34,7 @@ func SendTo(rid string, message []byte, uid string) error {
 	defer pool.mutex.Unlock()
 
 	conn, found := pool.connections[uid]
-	if found {
+	if !found {
 		return fmt.Errorf("could not find connection for user %q", uid)
 	}
 
