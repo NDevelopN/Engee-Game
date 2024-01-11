@@ -2,6 +2,7 @@ package playerSockets
 
 import (
 	im "Engee-Game/instanceManagement"
+	"strings"
 
 	"fmt"
 	"log"
@@ -27,6 +28,7 @@ func Instantiate(rid string) error {
 	newPool := new(SockPool)
 	newPool.mutex = sync.Mutex{}
 	newPool.connections = map[string]*websocket.Conn{}
+	newPool.listeners = map[string]string{}
 
 	gamePools[rid] = newPool
 
@@ -101,7 +103,12 @@ func AddPlayerToPool(rid string, uid string, conn *websocket.Conn) error {
 func AcceptInput(rid string, uid string, conn *websocket.Conn) {
 	for {
 		mType, data, err := conn.ReadMessage()
+
 		if err != nil {
+			if strings.Contains(err.Error(), "use of closed network connection") {
+				log.Printf("[Error] Network connection closed:  %v", err)
+				return
+			}
 			log.Printf("[Error] reading input from player %s: %v", uid, err)
 			continue
 		}
