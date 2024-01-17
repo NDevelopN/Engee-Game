@@ -109,6 +109,11 @@ func AcceptInput(rid string, uid string, conn *websocket.Conn) {
 				log.Printf("[Error] Network connection closed:  %v", err)
 				return
 			}
+			if strings.Contains(err.Error(), "connection closed") {
+				log.Printf("[Error] Network connection closed: %v", err)
+				return
+			}
+
 			log.Printf("[Error] reading input from player %s: %v", uid, err)
 			continue
 		}
