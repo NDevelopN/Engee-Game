@@ -97,7 +97,7 @@ func (dummy *GameDummy) JoinPlayer(uid string) error {
 
 	dummy.Players = append(dummy.Players, uid)
 
-	return dummy.SendPlayerUpdate()
+	return dummy.SendStatusUpdate()
 }
 
 func (dummy *GameDummy) AddListener(listener func([]byte) error) (string, error) {
