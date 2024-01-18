@@ -105,12 +105,14 @@ func AcceptInput(rid string, uid string, conn *websocket.Conn) {
 		mType, data, err := conn.ReadMessage()
 
 		if err != nil {
-			if strings.Contains(err.Error(), "use of closed network connection") {
+			if strings.Contains(err.Error(), "use of closed network connection") ||
+				strings.Contains(err.Error(), "connection closed") {
+
 				log.Printf("[Error] Network connection closed:  %v", err)
-				return
-			}
-			if strings.Contains(err.Error(), "connection closed") {
-				log.Printf("[Error] Network connection closed: %v", err)
+				err = RemovePlayerFromPool(rid, uid)
+				if err != nil {
+					log.Printf("[Error] Removing closed network connection from pool: %v", err)
+				}
 				return
 			}
 
