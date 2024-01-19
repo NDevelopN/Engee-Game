@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func (game *GameDummy) HandleMessage(message []byte) {
+func (game *GameDummy) HandleMessage(uid string, message []byte) {
 	var msg DummyMessage
 	err := json.Unmarshal(message, &msg)
 	if err != nil {

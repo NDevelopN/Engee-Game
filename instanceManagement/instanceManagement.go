@@ -143,43 +143,13 @@ func ResetInstance(rid string) error {
 	return nil
 }
 
-func AddPlayerToInstance(rid string, uid string) error {
+func AddPlayerToInstance(rid string, uid string, listener func(message []byte) error) error {
 	instance, err := getInstance(rid)
 	if err != nil {
 		return err
 	}
 
-	err = instance.JoinPlayer(uid)
-	if err != nil {
-		return err
-	}
-
-	instances[rid] = instance
-	return nil
-}
-
-func AddListenerToInstance(rid string, listener func(message []byte) error) (string, error) {
-	instance, err := getInstance(rid)
-	if err != nil {
-		return "", err
-	}
-
-	lid, err := instance.AddListener(listener)
-	if err != nil {
-		return "", err
-	}
-
-	instances[rid] = instance
-	return lid, nil
-}
-
-func RemoveListenerFromInstance(rid string, lid string) error {
-	instance, err := getInstance(rid)
-	if err != nil {
-		return err
-	}
-
-	err = instance.RemoveListener(lid)
+	err = instance.AddPlayer(uid, listener)
 	if err != nil {
 		return err
 	}
@@ -203,14 +173,14 @@ func RemovePlayerFromInstance(rid string, uid string) error {
 	return nil
 }
 
-func MessageHandleInstance(rid string, message []byte) {
+func MessageHandleInstance(rid string, uid string, message []byte) {
 	instance, err := getInstance(rid)
 	if err != nil {
 		log.Printf("[Error] could not get instnace to handle message: %v", err)
 		return
 	}
 
-	instance.HandleMessage(message)
+	instance.HandleMessage(uid, message)
 }
 
 func getInstance(rid string) (GameInstance, error) {

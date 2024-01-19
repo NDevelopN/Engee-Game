@@ -6,9 +6,7 @@ type GameInstance interface {
 	StartGame() error
 	PauseGame() error
 	ResetGame() error
-	JoinPlayer(uid string) error
+	AddPlayer(id string, listener func([]byte) error) error
 	RemovePlayer(uid string) error
-	AddListener(listener func([]byte) error) (string, error)
-	RemoveListener(id string) error
-	HandleMessage([]byte)
+	HandleMessage(uid string, message []byte)
 }

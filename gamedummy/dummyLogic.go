@@ -2,8 +2,6 @@ package gamedummy
 
 import (
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 const dummyRules = "Rules"
@@ -83,7 +81,7 @@ func (dummy *GameDummy) ResetGame() error {
 	return dummy.SendStatusUpdate()
 }
 
-func (dummy *GameDummy) JoinPlayer(uid string) error {
+func (dummy *GameDummy) AddPlayer(uid string, listener func([]byte) error) error {
 	err := checkValidGame(dummy, []int{})
 	if err != nil {
 		return err
@@ -96,27 +94,9 @@ func (dummy *GameDummy) JoinPlayer(uid string) error {
 	}
 
 	dummy.Players = append(dummy.Players, uid)
+	dummy.Listeners[uid] = listener
 
 	return dummy.SendStatusUpdate()
-}
-
-func (dummy *GameDummy) AddListener(listener func([]byte) error) (string, error) {
-	id := uuid.New().String()
-
-	dummy.Listeners[id] = listener
-
-	return id, nil
-}
-
-func (dummy *GameDummy) RemoveListener(id string) error {
-	_, found := dummy.Listeners[id]
-	if !found {
-		return fmt.Errorf("listener not found")
-	}
-
-	delete(dummy.Listeners, id)
-
-	return nil
 }
 
 func (dummy *GameDummy) RemovePlayer(uid string) error {
@@ -135,6 +115,8 @@ func (dummy *GameDummy) RemovePlayer(uid string) error {
 			return dummy.SendPlayerUpdate()
 		}
 	}
+
+	delete(dummy.Listeners, uid)
 
 	return fmt.Errorf("player not found in the game")
 }

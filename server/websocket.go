@@ -2,8 +2,8 @@ package server
 
 import (
 	"Engee-Game/instanceManagement"
-	pSock "Engee-Game/playerSockets"
 	"Engee-Game/utils"
+	"strings"
 
 	"fmt"
 	"log"
@@ -18,6 +18,8 @@ func JoinPlayer(c *gin.Context) {
 	r := c.Request
 
 	ids := utils.GetRequestIDs(c.Request)
+	rid := ids[0]
+	uid := ids[1]
 
 	conn, err := upgradeConnection(w, r)
 	if err != nil {
@@ -28,15 +30,17 @@ func JoinPlayer(c *gin.Context) {
 
 	conn.SetCloseHandler(handleClose)
 
-	err = pSock.AddPlayerToPool(ids[0], ids[1], conn)
-	if err != nil {
-		http.Error(w, "Failed to add player to pool", http.StatusInternalServerError)
-		log.Printf("[Error] Adding player to connection pool: %v", err)
-		conn.Close()
-		return
-	}
+	go listenWhileConnected(rid, uid, conn)
 
-	err = instanceManagement.AddPlayerToInstance(ids[0], ids[1])
+	err = instanceManagement.AddPlayerToInstance(ids[0], ids[1],
+		(func(message []byte) error {
+			err = conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				return fmt.Errorf("could not send message on ws connection: %v", err)
+			}
+			return nil
+		}))
+
 	if err != nil {
 		http.Error(w, "Failed to add player to game", http.StatusInternalServerError)
 		log.Printf("[Error] Adding player to game: %v", err)
@@ -61,4 +65,45 @@ func handleClose(code int, text string) error {
 	}
 
 	return fmt.Errorf("connection closed: %s", text)
+}
+
+func listenWhileConnected(rid string, uid string, conn *websocket.Conn) {
+	acceptInput(rid, uid, conn)
+
+	err := instanceManagement.RemovePlayerFromInstance(rid, uid)
+	if err != nil {
+		log.Printf("[Error] Removing player after conneciton ended: %v", err)
+	}
+}
+
+const badMsgThreshold = 10
+
+func acceptInput(rid string, uid string, conn *websocket.Conn) {
+	badMsgCount := 0
+
+	for {
+		mType, data, err := conn.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "use of closed network connection") ||
+				strings.Contains(err.Error(), "connection closed") {
+
+				log.Printf("[Error] Network connection closed:  %v", err)
+				return
+			}
+
+			log.Printf("[Error] reading input from player %s: %v", uid, err)
+			badMsgCount++
+			continue
+		}
+
+		if mType != websocket.TextMessage {
+			log.Printf("[Error] message type not supported: %v", mType)
+			badMsgCount++
+			continue
+		}
+
+		badMsgCount = 0
+
+		instanceManagement.MessageHandleInstance(rid, uid, data)
+	}
 }
