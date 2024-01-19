@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 
-	game "Engee-Game/gamedummy"
+	game "Engee-Game/consequences"
 	"Engee-Game/utils"
 )
 
@@ -19,7 +19,7 @@ func PrepareInstancing(gameAddr string) {
 	instances = make(map[string]GameInstance)
 
 	info := utils.StringPair{
-		First:  "test",
+		First:  "consequences",
 		Second: gameAddr,
 	}
 

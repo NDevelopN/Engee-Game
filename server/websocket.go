@@ -29,6 +29,7 @@ func JoinPlayer(c *gin.Context) {
 	}
 
 	conn.SetCloseHandler(handleClose)
+	log.Printf("Connection established")
 
 	go listenWhileConnected(rid, uid, conn)
 
@@ -47,6 +48,8 @@ func JoinPlayer(c *gin.Context) {
 		conn.Close()
 		return
 	}
+
+	log.Printf("Player added to instance")
 }
 
 func upgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
