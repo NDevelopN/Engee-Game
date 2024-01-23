@@ -112,7 +112,7 @@ func (dummy *GameDummy) RemovePlayer(uid string) error {
 		if plr == uid {
 			players[index] = players[end]
 			dummy.Players = players[:end]
-			return dummy.SendPlayerUpdate()
+			return nil
 		}
 	}
 

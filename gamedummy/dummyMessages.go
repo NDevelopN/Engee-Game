@@ -53,6 +53,7 @@ func (game *GameDummy) SendStatusUpdate() error {
 	return nil
 }
 
+/** TODO Don't need this anymore?
 func (game *GameDummy) SendPlayerUpdate() error {
 	players, err := json.Marshal(game.Players)
 	if err != nil {
@@ -75,6 +76,7 @@ func (game *GameDummy) SendPlayerUpdate() error {
 
 	return nil
 }
+*/
 
 func (game *GameDummy) SendXUpdate(x string, update string) error {
 	msg := DummyMessage{
