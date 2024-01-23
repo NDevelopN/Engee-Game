@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	game "Engee-Game/gamedummy"
 	"Engee-Game/utils"
@@ -13,13 +14,16 @@ import (
 
 var instances map[string]GameInstance
 
+const gameMode = "test"
 const serverAddr = "http://localhost:8090"
+
+const HeartbeatInterval = 3 * time.Second
 
 func PrepareInstancing(gameAddr string) {
 	instances = make(map[string]GameInstance)
 
 	info := utils.StringPair{
-		First:  "test",
+		First:  gameMode,
 		Second: gameAddr,
 	}
 
@@ -42,6 +46,24 @@ func PrepareInstancing(gameAddr string) {
 
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		log.Fatalf("Could not register game mode (code): %v", err)
+	}
+
+	hbRequest, err := http.NewRequest("POST", serverAddr+"/gameModes/"+gameMode, nil)
+	if err != nil {
+		log.Fatalf("Could not prepare heartbeat message: %v", err)
+	}
+
+	go SendHeartbeats(hbRequest)
+}
+
+func SendHeartbeats(request *http.Request) error {
+	for {
+		_, err := http.DefaultClient.Do(request)
+		if err != nil {
+			log.Fatalf("[Error] failed to send heartbeat message: %v", err)
+		}
+
+		time.Sleep(HeartbeatInterval)
 	}
 }
 
