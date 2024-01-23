@@ -3,23 +3,27 @@ package instanceManagement
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	game "Engee-Game/consequences"
+	sErr "Engee-Game/stockErrors"
 	"Engee-Game/utils"
 )
 
 var instances map[string]GameInstance
 
+const gameMode = "consequences"
 const serverAddr = "http://localhost:8090"
+
+const HeartbeatInterval = 3 * time.Second
 
 func PrepareInstancing(gameAddr string) {
 	instances = make(map[string]GameInstance)
 
 	info := utils.StringPair{
-		First:  "consequences",
+		First:  gameMode,
 		Second: gameAddr,
 	}
 
@@ -43,16 +47,40 @@ func PrepareInstancing(gameAddr string) {
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		log.Fatalf("Could not register game mode (code): %v", err)
 	}
+
+	hbRequest, err := http.NewRequest("POST", serverAddr+"/gameModes/"+gameMode, nil)
+	if err != nil {
+		log.Fatalf("Could not prepare heartbeat message: %v", err)
+	}
+
+	go SendHeartbeats(hbRequest)
+}
+
+func SendHeartbeats(request *http.Request) error {
+	for {
+		_, err := http.DefaultClient.Do(request)
+		if err != nil {
+			log.Fatalf("[Error] failed to send heartbeat message: %v", err)
+		}
+
+		time.Sleep(HeartbeatInterval)
+	}
 }
 
 func CreateNewInstance(rid string) error {
 	if rid == "" {
-		return fmt.Errorf("empty RID provided")
+		return &sErr.EmptyValueError{
+			Field: "RID",
+		}
 	}
 
 	_, found := instances[rid]
 	if found {
-		return fmt.Errorf("game already exists for room %s", rid)
+		return &sErr.MatchFoundError[string]{
+			Space: "Games",
+			Field: "RID",
+			Value: rid,
+		}
 	}
 
 	instance, err := game.CreateDefaultGame(rid)
@@ -186,7 +214,11 @@ func MessageHandleInstance(rid string, uid string, message []byte) {
 func getInstance(rid string) (GameInstance, error) {
 	instance, found := instances[rid]
 	if !found {
-		return instance, fmt.Errorf("game does not exist for room %s", rid)
+		return instance, &sErr.MatchNotFoundError[string]{
+			Space: "Games",
+			Field: "RID",
+			Value: rid,
+		}
 	}
 
 	return instance, nil
