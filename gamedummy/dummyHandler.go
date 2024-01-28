@@ -2,8 +2,9 @@ package gamedummy
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
+
+	sErr "Engee-Game/stockErrors"
 )
 
 func (game *GameDummy) HandleMessage(uid string, message []byte) {
@@ -30,6 +31,9 @@ func routeMessage(msg DummyMessage, game *GameDummy) error {
 	case "Test":
 		return game.Test(msg.Content)
 	default:
-		return fmt.Errorf("invalid dummy message type: %v", msg.Type)
+		return &sErr.InvalidValueError[string]{
+			Field: "Message Type",
+			Value: msg.Type,
+		}
 	}
 }

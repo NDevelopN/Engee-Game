@@ -3,12 +3,12 @@ package instanceManagement
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	game "Engee-Game/gamedummy"
+	sErr "Engee-Game/stockErrors"
 	"Engee-Game/utils"
 )
 
@@ -69,12 +69,18 @@ func SendHeartbeats(request *http.Request) error {
 
 func CreateNewInstance(rid string) error {
 	if rid == "" {
-		return fmt.Errorf("empty RID provided")
+		return &sErr.EmptyValueError{
+			Field: "RID",
+		}
 	}
 
 	_, found := instances[rid]
 	if found {
-		return fmt.Errorf("game already exists for room %s", rid)
+		return &sErr.MatchFoundError[string]{
+			Space: "Games",
+			Field: "RID",
+			Value: rid,
+		}
 	}
 
 	instance, err := game.CreateDefaultGame(rid)
@@ -208,7 +214,11 @@ func MessageHandleInstance(rid string, uid string, message []byte) {
 func getInstance(rid string) (GameInstance, error) {
 	instance, found := instances[rid]
 	if !found {
-		return instance, fmt.Errorf("game does not exist for room %s", rid)
+		return instance, &sErr.MatchNotFoundError[string]{
+			Space: "Games",
+			Field: "RID",
+			Value: rid,
+		}
 	}
 
 	return instance, nil

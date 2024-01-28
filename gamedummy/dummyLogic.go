@@ -2,6 +2,8 @@ package gamedummy
 
 import (
 	"fmt"
+
+	sErr "Engee-Game/stockErrors"
 )
 
 const dummyRules = "Rules"
@@ -89,7 +91,11 @@ func (dummy *GameDummy) AddPlayer(uid string, listener func([]byte) error) error
 
 	for _, plr := range dummy.Players {
 		if plr == uid {
-			return fmt.Errorf("player already in the game")
+			return &sErr.MatchFoundError[string]{
+				Space: "Game Players",
+				Field: "UID",
+				Value: plr,
+			}
 		}
 	}
 
@@ -112,13 +118,16 @@ func (dummy *GameDummy) RemovePlayer(uid string) error {
 		if plr == uid {
 			players[index] = players[end]
 			dummy.Players = players[:end]
+			delete(dummy.Listeners, uid)
 			return nil
 		}
 	}
 
-	delete(dummy.Listeners, uid)
-
-	return fmt.Errorf("player not found in the game")
+	return &sErr.MatchNotFoundError[string]{
+		Space: "Game Players",
+		Field: "UID",
+		Value: uid,
+	}
 }
 
 func (dummy *GameDummy) EndGame() error {
@@ -157,8 +166,10 @@ func (dummy *GameDummy) Control(message string) error {
 		return dummy.EndGame()
 	}
 
-	return fmt.Errorf("unrecognised command: %q", message)
-
+	return sErr.InvalidValueError[string]{
+		Field: "Command",
+		Value: message,
+	}
 }
 
 func (dummy *GameDummy) Test(message string) error {
@@ -176,7 +187,9 @@ func (dummy *GameDummy) Test(message string) error {
 
 func checkValidGame(dummy *GameDummy, status []int) error {
 	if dummy.Rules == "" {
-		return fmt.Errorf("rules are not set")
+		return &sErr.EmptyValueError{
+			Field: "Game Rules",
+		}
 	}
 
 	if len(status) > 0 {
@@ -190,7 +203,10 @@ func checkValidGame(dummy *GameDummy, status []int) error {
 		}
 
 		if !validStatus {
-			return fmt.Errorf("game is not in a valid state")
+			return &sErr.InvalidValueError[int]{
+				Field: "Status",
+				Value: dummy.Status,
+			}
 		}
 	}
 
