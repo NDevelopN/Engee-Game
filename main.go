@@ -6,7 +6,7 @@ import (
 )
 
 const port = "8091"
-const address = "localhost:" + port
+const address = "http://localhost:" + port
 
 func main() {
 	instanceManagement.PrepareInstancing(address)
