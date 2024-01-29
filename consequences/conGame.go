@@ -3,6 +3,8 @@ package consequences
 import (
 	"encoding/json"
 	"fmt"
+
+	sErr "Engee-Game/stockErrors"
 )
 
 var defaultPrompts = []string{
@@ -68,7 +70,7 @@ func (game *ConGame) SetRules(rString string) error {
 
 	err = game.ResetGame()
 	if err != nil {
-		return fmt.Errorf("could not update rules, failed in reset: %v", err)
+		return fmt.Errorf("could not reset game to apply rules update: %w", err)
 	}
 
 	game.Rules = rules
@@ -113,7 +115,11 @@ func (game *ConGame) EndGame() error {
 func (game *ConGame) AddPlayer(uid string, listener func([]byte) error) error {
 	_, found := game.ReplySet[uid]
 	if found {
-		return fmt.Errorf("player with that ID already added")
+		return &sErr.MatchFoundError[string]{
+			Space: "Game Players",
+			Field: "UID",
+			Value: uid,
+		}
 	}
 
 	game.ReplySet[uid] = make([]string, len(game.Rules.Prompts))
@@ -138,7 +144,11 @@ func (game *ConGame) AddPlayer(uid string, listener func([]byte) error) error {
 func (game *ConGame) RemovePlayer(uid string) error {
 	_, found := game.ReplySet[uid]
 	if !found {
-		return fmt.Errorf("player with that ID is not in this game")
+		return &sErr.MatchNotFoundError[string]{
+			Space: "Game Players",
+			Field: "UID",
+			Value: uid,
+		}
 	}
 
 	delete(game.ReplySet, uid)
@@ -146,7 +156,11 @@ func (game *ConGame) RemovePlayer(uid string) error {
 
 	_, found = game.Listeners[uid]
 	if !found {
-		return fmt.Errorf("listener for player: %s was not found", uid)
+		return &sErr.MatchNotFoundError[string]{
+			Space: "Player Listeners",
+			Field: "UID",
+			Value: uid,
+		}
 	}
 
 	delete(game.Listeners, uid)
@@ -165,16 +179,26 @@ func (game *ConGame) GetPrompts(uid string) error {
 func (game *ConGame) AcceptReply(uid string, replies []string) error {
 	_, found := game.ReplySet[uid]
 	if !found {
-		return fmt.Errorf("player %q not found in game", uid)
+		return &sErr.MatchNotFoundError[string]{
+			Space: "Player Listeners",
+			Field: "UID",
+			Value: uid,
+		}
 	}
 
 	if len(replies) != len(game.Rules.Prompts) {
-		return fmt.Errorf("invalid number of replies")
+		return &sErr.InvalidSetLengthError{
+			Set:      "Replies",
+			Expected: len(game.Rules.Prompts),
+			Actual:   len(replies),
+		}
 	}
 
 	for index, reply := range replies {
 		if reply == "" {
-			return fmt.Errorf("reply[%d] is empty", index)
+			return &sErr.EmptyValueError{
+				Field: fmt.Sprintf("Reply [%d]", index),
+			}
 		}
 	}
 
@@ -199,7 +223,10 @@ func (game *ConGame) AcceptReply(uid string, replies []string) error {
 
 func (game *ConGame) PlayerReady(uid string) error {
 	if game.Status != WAITING {
-		return fmt.Errorf("game not in a state to accept Continue messages")
+		return &sErr.InvalidValueError[int]{
+			Field: "Game Status",
+			Value: game.Status,
+		}
 	}
 
 	game.PlayerStatus[uid] = true
@@ -241,11 +268,17 @@ func (game *ConGame) switchToShuffle() error {
 func (game *ConGame) GetShuffledReplies(uid string) error {
 	_, found := game.ReplySet[uid]
 	if !found {
-		return fmt.Errorf("player %q not found in game", uid)
+		return &sErr.MatchNotFoundError[string]{
+			Space: "Game Players",
+			Field: "UID",
+			Value: uid,
+		}
 	}
 
 	if game.Shuffled == nil {
-		return fmt.Errorf("shuffled replies are not available")
+		return &sErr.EmptyValueError{
+			Field: "Shuffled Replies",
+		}
 	}
 
 	return game.SendShuffledTo(uid)
@@ -257,7 +290,11 @@ func (game *ConGame) shuffleReplies() error {
 	var intToUID []string
 	for uid, userSet := range game.ReplySet {
 		if userSet == nil {
-			return fmt.Errorf("missing reply set for user %s", uid)
+			return &sErr.MatchNotFoundError[string]{
+				Space: "Reply Sets",
+				Field: "UID",
+				Value: uid,
+			}
 		}
 		intToUID = append(intToUID, uid)
 	}
@@ -270,7 +307,9 @@ func (game *ConGame) shuffleReplies() error {
 			shuffleUID := intToUID[shuffleIndex]
 			nextReply := game.ReplySet[shuffleUID][pIndex]
 			if nextReply == "" {
-				return fmt.Errorf("empty reply found, cannot shuffle")
+				return sErr.EmptyValueError{
+					Field: fmt.Sprintf("Reply [%d,%d]", uIndex, pIndex),
+				}
 			}
 			shuffleSet[pIndex] = nextReply
 			pIndex++

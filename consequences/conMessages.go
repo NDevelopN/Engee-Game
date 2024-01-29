@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+
+	sErr "Engee-Game/stockErrors"
 )
 
 type ConMessage struct {
@@ -19,7 +21,10 @@ func (game *ConGame) SendStatus() error {
 
 	err = game.broadcastMessage(message)
 	if err != nil {
-		return fmt.Errorf("could not broadcast status update message: %v", err)
+		return &sErr.BroadcastError{
+			Message: "Status Update",
+			Err:     err,
+		}
 	}
 
 	return nil
@@ -33,7 +38,11 @@ func (game *ConGame) SendStatusTo(uid string) error {
 
 	err = game.sendTo(uid, message)
 	if err != nil {
-		return fmt.Errorf("could not send status update message: %v", err)
+		return &sErr.SingleSendError{
+			Message: "Status Update",
+			Target:  "Player: " + uid,
+			Err:     err,
+		}
 	}
 
 	return nil
@@ -56,7 +65,10 @@ func (game *ConGame) SendPrompts() error {
 
 	err = game.broadcastMessage(message)
 	if err != nil {
-		return fmt.Errorf("could not broadcast prompts message: %v", err)
+		return &sErr.BroadcastError{
+			Message: "Prompts",
+			Err:     err,
+		}
 	}
 
 	return nil
@@ -70,7 +82,11 @@ func (game *ConGame) SendPromptsTo(uid string) error {
 
 	err = game.sendTo(uid, message)
 	if err != nil {
-		return fmt.Errorf("could not send prompts message: %v", err)
+		return &sErr.SingleSendError{
+			Message: "Prompts",
+			Target:  "Player: " + uid,
+			Err:     err,
+		}
 	}
 
 	return nil
@@ -98,7 +114,11 @@ func (game *ConGame) SendShuffledTo(uid string) error {
 
 	err = game.sendTo(uid, message)
 	if err != nil {
-		return fmt.Errorf("could not send shuffled replies: %v", err)
+		return &sErr.SingleSendError{
+			Message: "Shuffled Replies",
+			Target:  "Player: " + uid,
+			Err:     err,
+		}
 	}
 
 	return nil
