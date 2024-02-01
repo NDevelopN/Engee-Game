@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"Engee-Game/config"
 	game "Engee-Game/gamedummy"
 	sErr "Engee-Game/stockErrors"
 	"Engee-Game/utils"
@@ -14,16 +15,15 @@ import (
 
 var instances map[string]GameInstance
 
-const gameMode = "test"
-const serverAddr = "http://localhost:8090"
-
 const HeartbeatInterval = 3 * time.Second
 
-func PrepareInstancing(gameAddr string) {
+func PrepareInstancing(config config.Config) {
 	instances = make(map[string]GameInstance)
 
+	gameAddr := "http://" + config.GameServer.Host + config.GameServer.Port
+	regAddr := "http://" + config.RegistryServer.Host + config.RegistryServer.Port
 	info := utils.StringPair{
-		First:  gameMode,
+		First:  config.GameMode,
 		Second: gameAddr,
 	}
 
@@ -34,7 +34,7 @@ func PrepareInstancing(gameAddr string) {
 
 	reqBody := bytes.NewReader(body)
 
-	request, err := http.NewRequest("POST", serverAddr+"/gameModes", reqBody)
+	request, err := http.NewRequest("POST", regAddr+"/gameModes", reqBody)
 	if err != nil {
 		log.Fatalf("Could not register game mode (request): %v", err)
 	}
@@ -48,7 +48,7 @@ func PrepareInstancing(gameAddr string) {
 		log.Fatalf("Could not register game mode (code): %v", err)
 	}
 
-	hbRequest, err := http.NewRequest("POST", serverAddr+"/gameModes/"+gameMode, nil)
+	hbRequest, err := http.NewRequest("POST", regAddr+"/gameModes/"+config.GameMode, nil)
 	if err != nil {
 		log.Fatalf("Could not prepare heartbeat message: %v", err)
 	}
