@@ -3,6 +3,7 @@ package instanceManagement
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -20,8 +21,8 @@ const HeartbeatInterval = 3 * time.Second
 func PrepareInstancing(config config.Config) {
 	instances = make(map[string]GameInstance)
 
-	gameAddr := "http://" + config.GameServer + config.GamePort
-	regAddr := "http://" + config.RegistryServer + config.RegistryPort
+	gameAddr := fmt.Sprintf("http://%s:%s", config.GameServer, config.GamePort)
+	regAddr := fmt.Sprintf("http://%s:%s", config.RegistryServer, config.RegistryPort)
 	info := utils.StringPair{
 		First:  config.GameMode,
 		Second: gameAddr,
