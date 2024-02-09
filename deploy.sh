@@ -7,6 +7,11 @@ time=$(date)
 
 mkdir -p "$loc/logs/$time"
 
+if [ -z "${GAME_MODE}" ]
+then
+    GAME_MODE="test"
+fi
+
 sed -i "s/\"game_server\":.*/\"game_server\": \"${GAME_HOST}\",/g" config.json
 sed -i "s/\"game_port\":.*/\"game_port\": \"${GAME_INNER}\",/g" config.json
 sed -i "s/\"registry_server\":.*/\"registry_server\": \"${SERVER_HOST}\",/g" config.json
