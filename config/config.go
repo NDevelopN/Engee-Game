@@ -8,16 +8,12 @@ import (
 
 const configPath = "./config.json"
 
-type Address struct {
-	Protocol string `json:"protocol"`
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-}
-
 type Config struct {
-	GameServer     Address `json:"game_server"`
-	RegistryServer Address `json:"registry_server"`
-	GameMode       string  `json:"game_mode"`
+	GameServer     string `json:"game_server"`
+	GamePort       string `json:"game_port"`
+	RegistryServer string `json:"registry_server"`
+	RegistryPort   string `json:"registry_port"`
+	GameMode       string `json:"game_mode"`
 }
 
 func ReadConfig() Config {

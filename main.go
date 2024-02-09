@@ -9,5 +9,5 @@ import (
 func main() {
 	config := config.ReadConfig()
 	instanceManagement.PrepareInstancing(config)
-	server.Serve(config.GameServer.Port)
+	server.Serve(config.GamePort)
 }

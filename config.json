@@ -1,13 +1,9 @@
 {
-    "game_server": {
-        "host": "localhost",
-        "port": 8091
-    },
+    "game_server": "localhost",
+    "game_port": 8091,
 
-    "registry_server": {
-        "host": "localhost",
-        "port": 8090
-    },
+    "registry_server": "localhost",
+    "registry_port": 8090,
 
     "game_mode": "test"
 }
